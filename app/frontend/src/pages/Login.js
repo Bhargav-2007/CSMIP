@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
-import { useAuth, API_URL } from "@/auth";
+import { useAuth } from "@/auth";
 import { useI18n } from "@/i18n";
+import { authAPI, formatAPIError } from "@/services/api";
 import { toast } from "sonner";
 import { Phone, ShieldCheck, ArrowRight } from "lucide-react";
 
@@ -26,16 +26,17 @@ export default function Login() {
     }
     setLoading(true);
     try {
-      const r = await axios.post(`${API_URL}/auth/send-otp`, { phone });
+      const response = await authAPI.sendOTP(phone);
       setStep(2);
       toast.success("OTP sent to your phone number");
       
       // DEVELOPMENT ONLY: Log OTP to console for testing
-      if (process.env.NODE_ENV === "development" && r.data.dev_otp) {
-        console.log(`[DEV] OTP for testing: ${r.data.dev_otp}`);
+      if (process.env.NODE_ENV === "development" && response.data.dev_otp) {
+        console.log(`[DEV] OTP for testing: ${response.data.dev_otp}`);
       }
-    } catch (e) {
-      toast.error(e.response?.data?.message || "Failed to send OTP");
+    } catch (error) {
+      const apiError = formatAPIError(error);
+      toast.error(apiError.message);
     }
     setLoading(false);
   };
@@ -43,16 +44,21 @@ export default function Login() {
   const verify = async () => {
     setLoading(true);
     try {
-      const r = await axios.post(`${API_URL}/auth/verify-otp`, {
-        phone,
-        otp,
-        name: name || "Citizen",
-      });
-      login(r.data.token, r.data.user);
-      toast.success(`Welcome, ${r.data.user.name}`);
+      const response = await authAPI.verifyOTP(phone, otp);
+      const { token, refresh_token, user } = response.data;
+      
+      // Store tokens in localStorage
+      localStorage.setItem('token', token);
+      localStorage.setItem('refresh_token', refresh_token);
+      localStorage.setItem('user', JSON.stringify(user));
+      
+      // Update auth context
+      login(token, user);
+      toast.success(`Welcome, ${user.name || 'Citizen'}`);
       nav("/dashboard");
-    } catch (e) {
-      toast.error(e.response?.data?.message || "Invalid OTP");
+    } catch (error) {
+      const apiError = formatAPIError(error);
+      toast.error(apiError.message);
     }
     setLoading(false);
   };
@@ -77,16 +83,31 @@ export default function Login() {
                   <div className="mt-1 flex items-center gap-2 border border-slate-300 rounded-md px-3 focus-within:ring-2 focus-within:ring-blue-500">
                     <Phone className="w-4 h-4 text-slate-400" />
                     <span className="text-slate-600 text-sm">+91</span>
-                    <Input data-testid="login-phone-input" value={phone} onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 10))}
-                      placeholder="9999999999" className="border-0 focus-visible:ring-0 px-1" />
+                    <Input 
+                      data-testid="login-phone-input" 
+                      value={phone} 
+                      onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 10))}
+                      placeholder="9999999999" 
+                      className="border-0 focus-visible:ring-0 px-1" 
+                    />
                   </div>
                 </div>
                 <div>
                   <label className="text-sm font-medium text-slate-700">{t("your_name")} (Optional)</label>
-                  <Input data-testid="login-name-input" value={name} onChange={(e) => setName(e.target.value)} placeholder="Rahul Sharma" className="mt-1" />
+                  <Input 
+                    data-testid="login-name-input" 
+                    value={name} 
+                    onChange={(e) => setName(e.target.value)} 
+                    placeholder="Rahul Sharma" 
+                    className="mt-1" 
+                  />
                 </div>
-                <Button onClick={send} disabled={loading} data-testid="send-otp-btn"
-                  className="w-full bg-[var(--civic-primary)] hover:bg-blue-800 text-white">
+                <Button 
+                  onClick={send} 
+                  disabled={loading} 
+                  data-testid="send-otp-btn"
+                  className="w-full bg-[var(--civic-primary)] hover:bg-blue-800 text-white"
+                >
                   {loading ? "Sending..." : t("send_otp")} <ArrowRight className="w-4 h-4 ml-1" />
                 </Button>
               </div>
