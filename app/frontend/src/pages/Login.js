@@ -17,19 +17,25 @@ export default function Login() {
   const [phone, setPhone] = useState("");
   const [otp, setOtp] = useState("");
   const [name, setName] = useState("");
-  const [devOtp, setDevOtp] = useState("");
   const [loading, setLoading] = useState(false);
 
   const send = async () => {
-    if (!/^\d{10}$/.test(phone)) { toast.error("Enter a valid 10-digit mobile number"); return; }
+    if (!/^\d{10}$/.test(phone)) {
+      toast.error("Enter a valid 10-digit mobile number");
+      return;
+    }
     setLoading(true);
     try {
       const r = await axios.post(`${API_URL}/auth/send-otp`, { phone });
-      setDevOtp(r.data.dev_otp);
       setStep(2);
-      toast.success(`OTP sent (Dev: ${r.data.dev_otp})`);
+      toast.success("OTP sent to your phone number");
+      
+      // DEVELOPMENT ONLY: Log OTP to console for testing
+      if (process.env.NODE_ENV === "development" && r.data.dev_otp) {
+        console.log(`[DEV] OTP for testing: ${r.data.dev_otp}`);
+      }
     } catch (e) {
-      toast.error("Failed to send OTP");
+      toast.error(e.response?.data?.message || "Failed to send OTP");
     }
     setLoading(false);
   };
@@ -37,12 +43,16 @@ export default function Login() {
   const verify = async () => {
     setLoading(true);
     try {
-      const r = await axios.post(`${API_URL}/auth/verify-otp`, { phone, otp, name: name || "Citizen" });
+      const r = await axios.post(`${API_URL}/auth/verify-otp`, {
+        phone,
+        otp,
+        name: name || "Citizen",
+      });
       login(r.data.token, r.data.user);
       toast.success(`Welcome, ${r.data.user.name}`);
       nav("/dashboard");
     } catch (e) {
-      toast.error("Invalid OTP");
+      toast.error(e.response?.data?.message || "Invalid OTP");
     }
     setLoading(false);
   };
@@ -86,15 +96,30 @@ export default function Login() {
               <div className="mt-8 space-y-4">
                 <div>
                   <label className="text-sm font-medium text-slate-700">{t("enter_otp")}</label>
-                  <Input data-testid="login-otp-input" value={otp} onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                    placeholder="123456" className="mt-1 tracking-widest text-center text-lg" />
-                  {devOtp && <p className="text-xs text-slate-500 mt-1">Dev OTP: <span className="font-mono">{devOtp}</span></p>}
+                  <Input
+                    data-testid="login-otp-input"
+                    value={otp}
+                    onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                    placeholder="123456"
+                    className="mt-1 tracking-widest text-center text-lg"
+                  />
+                  <p className="text-xs text-slate-500 mt-2">
+                    Enter the 6-digit OTP sent to +91 {phone}
+                  </p>
                 </div>
-                <Button onClick={verify} disabled={loading || otp.length !== 6} data-testid="verify-otp-btn"
-                  className="w-full bg-[var(--civic-primary)] hover:bg-blue-800 text-white">
+                <Button
+                  onClick={verify}
+                  disabled={loading || otp.length !== 6}
+                  data-testid="verify-otp-btn"
+                  className="w-full bg-[var(--civic-primary)] hover:bg-blue-800 text-white"
+                >
                   {loading ? "Verifying..." : t("verify_otp")}
                 </Button>
-                <button onClick={() => setStep(1)} className="text-sm text-slate-600 hover:text-slate-900 block w-full" data-testid="change-phone-btn">
+                <button
+                  onClick={() => setStep(1)}
+                  className="text-sm text-slate-600 hover:text-slate-900 block w-full"
+                  data-testid="change-phone-btn"
+                >
                   Change phone number
                 </button>
               </div>

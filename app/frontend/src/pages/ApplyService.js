@@ -29,18 +29,40 @@ export default function ApplyService() {
 
   const setField = (name, val) => setData(d => ({ ...d, [name]: val }));
 
+  const validateForm = () => {
+    const errors = [];
+    svc.fields?.forEach(f => {
+      if (f.required && !data[f.name]) {
+        errors.push(`${f.label} is required`);
+      }
+    });
+    return errors;
+  };
+
   const submit = async () => {
+    const errors = validateForm();
+    if (errors.length > 0) {
+      toast.error(errors[0]);
+      return;
+    }
+
     setSubmitting(true);
     try {
-      const r = await axios.post(`${API_URL}/applications`,
+      const r = await axios.post(
+        `${API_URL}/applications`,
         { service_slug: slug, form_data: data },
-        { headers: authHeaders(token) });
+        { headers: authHeaders(token) }
+      );
       setResult(r.data);
       toast.success(`Application submitted: ${r.data.ref_no}`);
     } catch (e) {
-      toast.error("Submission failed. Check required fields.");
+      toast.error(e.response?.data?.message || "Submission failed");
     }
     setSubmitting(false);
+  };
+
+  const canReview = () => {
+    return svc.fields?.every(f => !f.required || data[f.name]);
   };
 
   if (result) {
@@ -95,8 +117,14 @@ export default function ApplyService() {
           ))}
 
           {!review ? (
-            <Button onClick={() => setReview(true)} data-testid="review-btn"
-              className="w-full bg-[var(--civic-primary)] hover:bg-blue-800 text-white">Review Application</Button>
+            <Button
+              onClick={() => setReview(true)}
+              disabled={!canReview()}
+              data-testid="review-btn"
+              className="w-full bg-[var(--civic-primary)] hover:bg-blue-800 text-white disabled:opacity-50"
+            >
+              Review Application
+            </Button>
           ) : (
             <div className="border border-slate-200 rounded-md p-4 bg-slate-50">
               <h3 className="font-semibold text-slate-900 mb-2">Review your details</h3>

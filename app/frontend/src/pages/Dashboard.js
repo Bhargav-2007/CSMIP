@@ -27,9 +27,10 @@ export default function Dashboard() {
   }, [token]);
 
   const becomeAdmin = async () => {
-    await axios.post(`${API_URL}/admin/promote-self`, {}, { headers: authHeaders(token) });
-    toast.success("You are now an admin. Refreshing...");
-    await refresh();
+    // REMOVED: This endpoint is a security vulnerability
+    // Admin role should ONLY be granted by server-side authorization
+    // Never allow users to self-promote to admin through frontend
+    toast.error("Admin access requires proper authorization from administrators");
   };
 
   const cards = [
@@ -47,8 +48,8 @@ export default function Dashboard() {
           <p className="text-slate-600 mt-1">+91 {user?.phone}</p>
         </div>
         {user?.role !== "admin" && (
-          <Button variant="outline" onClick={becomeAdmin} data-testid="become-admin-btn">
-            <ShieldUser className="w-4 h-4 mr-1" /> Switch to Officer Mode (Demo)
+          <Button variant="outline" disabled title="Admin access requires server-side authorization" data-testid="become-admin-btn">
+            <ShieldUser className="w-4 h-4 mr-1" /> Admin Access (Requires Authorization)
           </Button>
         )}
       </div>
