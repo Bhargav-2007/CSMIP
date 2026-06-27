@@ -1,5 +1,6 @@
 const express = require('express');
 const { authenticate, authorize } = require('../middleware/auth');
+const { exportToExcel, formatExportData } = require('../utils/export');
 const router = express.Router();
 
 // Admin dashboard stats
@@ -216,29 +217,113 @@ router.put('/rti/:refNo/respond', authenticate, authorize(['ADMIN', 'OFFICER']),
   }
 });
 
-// Export data (CSV-like JSON format)
+// Export data (JSON or Excel format)
 router.get('/export/:kind', authenticate, authorize(['ADMIN']), async (req, res) => {
   try {
     const { kind } = req.params;
+    const { format = 'json' } = req.query; // default: json, or: xlsx
 
     let data = [];
+    let sheetName = 'Data';
+
     if (kind === 'applications') {
       data = await req.prisma.application.findMany({
         where: { deletedAt: null },
         include: { user: true, service: true }
       });
+      sheetName = 'Applications';
     } else if (kind === 'complaints') {
       data = await req.prisma.complaint.findMany({
         where: { deletedAt: null },
         include: { user: true }
       });
+      sheetName = 'Complaints';
     } else if (kind === 'payments') {
       data = await req.prisma.payment.findMany({
         include: { user: true, application: { include: { service: true } } }
       });
+      sheetName = 'Payments';
+    } else if (kind === 'users') {
+      data = await req.prisma.user.findMany({
+        where: { deletedAt: null }
+      });
+      sheetName = 'Users';
+    } else if (kind === 'rti') {
+      data = await req.prisma.rTIRequest.findMany({
+        where: { deletedAt: null },
+        include: { user: true }
+      });
+      sheetName = 'RTI Requests';
+    } else if (kind === 'all') {
+      // Export all data in multiple sheets
+      const [apps, comps, pays, users, rtis] = await Promise.all([
+        req.prisma.application.findMany({
+          where: { deletedAt: null },
+          include: { user: true, service: true }
+        }),
+        req.prisma.complaint.findMany({
+          where: { deletedAt: null },
+          include: { user: true }
+        }),
+        req.prisma.payment.findMany({
+          include: { user: true, application: { include: { service: true } } }
+        }),
+        req.prisma.user.findMany({
+          where: { deletedAt: null }
+        }),
+        req.prisma.rTIRequest.findMany({
+          where: { deletedAt: null },
+          include: { user: true }
+        })
+      ]);
+
+      if (format === 'xlsx') {
+        const { exportToExcelMultiSheet } = require('../utils/export');
+        const sheetsData = {
+          'Applications': formatExportData('applications', apps),
+          'Complaints': formatExportData('complaints', comps),
+          'Payments': formatExportData('payments', pays),
+          'Users': formatExportData('users', users),
+          'RTI Requests': formatExportData('rti', rtis)
+        };
+
+        const buffer = exportToExcelMultiSheet(sheetsData);
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        res.setHeader('Content-Disposition', `attachment; filename="csmip-all-data-${Date.now()}.xlsx"`);
+        res.send(buffer);
+        return;
+      }
+
+      res.json({
+        data: {
+          applications: formatExportData('applications', apps),
+          complaints: formatExportData('complaints', comps),
+          payments: formatExportData('payments', pays),
+          users: formatExportData('users', users),
+          rti_requests: formatExportData('rti', rtis)
+        },
+        export_format: 'json',
+        exported_at: new Date()
+      });
+      return;
     }
 
-    res.json({ data, export_format: 'json', total: data.length });
+    // Format data for better readability
+    const formattedData = formatExportData(kind, data);
+
+    if (format === 'xlsx') {
+      const buffer = exportToExcel(formattedData, sheetName);
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      res.setHeader('Content-Disposition', `attachment; filename="csmip-${kind}-${Date.now()}.xlsx"`);
+      res.send(buffer);
+    } else {
+      res.json({
+        data: formattedData,
+        export_format: 'json',
+        total: formattedData.length,
+        exported_at: new Date()
+      });
+    }
   } catch (error) {
     res.status(500).json({
       error: { code: 'EXPORT_ERROR', message: 'Failed to export data' }

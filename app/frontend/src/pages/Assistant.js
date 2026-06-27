@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { API_URL } from "@/auth";
-import { MessageCircle, Send, Sparkles, FileText } from "lucide-react";
+import { MessageCircle, Send, Sparkles, FileText, Upload, X } from "lucide-react";
 
 const ROUTE_MAP = {
   "birth-certificate": "/services/birth-certificate",
@@ -45,6 +45,9 @@ export default function Assistant() {
   const [input, setInput] = useState("");
   const [streaming, setStreaming] = useState(false);
   const [routeHint, setRouteHint] = useState(null);
+  const [uploadedFiles, setUploadedFiles] = useState([]);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef(null);
   const bottomRef = useRef(null);
 
   useEffect(() => {
@@ -61,6 +64,50 @@ export default function Assistant() {
     return m ? m[1] : null;
   };
 
+  const handleFileUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_URL}/api/documents/upload`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` },
+        body: formData
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setUploadedFiles([...uploadedFiles, {
+          name: file.name,
+          size: file.size,
+          type: file.type,
+          preview: data.preview
+        }]);
+        
+        // Add file to chat
+        setMessages(m => [...m, {
+          role: "system",
+          content: `📎 Uploaded: ${file.name} (${(file.size / 1024).toFixed(2)} KB)\n\n${data.preview}`
+        }]);
+      }
+    } catch (error) {
+      console.error('File upload failed:', error);
+      alert('Failed to upload file. Please try again.');
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  const removeFile = (index) => {
+    setUploadedFiles(uploadedFiles.filter((_, i) => i !== index));
+  };
+
   const send = async () => {
     if (!input.trim() || streaming) return;
     const userMsg = input.trim();
@@ -73,7 +120,11 @@ export default function Assistant() {
       const res = await fetch(`${API_URL}${endpoint}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ session_id: sessionId, message: userMsg }),
+        body: JSON.stringify({ 
+          session_id: sessionId, 
+          message: userMsg,
+          files: uploadedFiles // Include uploaded files context
+        }),
       });
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
@@ -159,7 +210,9 @@ export default function Assistant() {
             {messages.map((m, i) => (
               <div key={i} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
                 <div className={`max-w-[80%] rounded-lg px-4 py-2 text-sm leading-relaxed whitespace-pre-wrap ${
-                  m.role === "user" ? "bg-[var(--civic-primary)] text-white" : "bg-slate-100 text-slate-900"
+                  m.role === "user" ? "bg-[var(--civic-primary)] text-white" : 
+                  m.role === "system" ? "bg-amber-50 text-slate-900 border border-amber-200" :
+                  "bg-slate-100 text-slate-900"
                 }`} data-testid={`msg-${m.role}-${i}`}>
                   {m.content.replace(/ROUTE:\s*[a-z0-9-]+/i, "").trim() || (m.role === "assistant" && streaming && i === messages.length - 1 ? "…" : "")}
                 </div>
@@ -179,12 +232,56 @@ export default function Assistant() {
             <div ref={bottomRef} />
           </div>
 
+          {/* Uploaded Files Display */}
+          {uploadedFiles.length > 0 && (
+            <div className="border-t border-slate-200 p-3 bg-slate-50">
+              <p className="text-xs text-slate-600 font-semibold mb-2">📎 Attached Documents:</p>
+              <div className="flex flex-wrap gap-2">
+                {uploadedFiles.map((file, i) => (
+                  <div key={i} className="bg-white border border-slate-200 rounded px-3 py-2 text-xs flex items-center gap-2">
+                    <FileText className="w-3 h-3 text-slate-500" />
+                    <span>{file.name}</span>
+                    <button onClick={() => removeFile(i)} className="hover:text-red-500">
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           <div className="border-t border-slate-200 p-3 flex items-center gap-2">
-            <Input value={input} onChange={e => setInput(e.target.value)}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".pdf,.txt,.doc,.docx,.jpg,.jpeg,.png"
+              onChange={handleFileUpload}
+              disabled={uploading}
+              className="hidden"
+            />
+            <Button 
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploading}
+              variant="outline"
+              size="sm"
+              title="Upload document (PDF, TXT, DOC, DOCX, JPG, PNG)"
+              data-testid="file-upload-btn"
+            >
+              <Upload className="w-4 h-4" />
+            </Button>
+            <Input 
+              value={input} 
+              onChange={e => setInput(e.target.value)}
               onKeyDown={e => e.key === "Enter" && !e.shiftKey && (e.preventDefault(), send())}
-              placeholder="Type your question..." data-testid="chat-input" />
-            <Button onClick={send} disabled={streaming || !input.trim()} data-testid="chat-send"
-              className="bg-[var(--civic-primary)] hover:bg-blue-800 text-white">
+              placeholder="Type your question or upload a document..." 
+              data-testid="chat-input" 
+            />
+            <Button 
+              onClick={send} 
+              disabled={streaming || !input.trim()} 
+              data-testid="chat-send"
+              className="bg-[var(--civic-primary)] hover:bg-blue-800 text-white"
+            >
               <Send className="w-4 h-4" />
             </Button>
           </div>

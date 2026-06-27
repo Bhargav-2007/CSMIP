@@ -3,6 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
+const fileUpload = require('express-fileupload');
 const { PrismaClient } = require('@prisma/client');
 
 // Import routes
@@ -15,6 +16,7 @@ const paymentRoutes = require('./routes/payments');
 const dashboardRoutes = require('./routes/dashboard');
 const adminRoutes = require('./routes/admin');
 const userRoutes = require('./routes/user');
+const documentRoutes = require('./routes/documents');
 
 // Initialize app and Prisma
 const app = express();
@@ -29,6 +31,11 @@ app.use(cors({
 
 app.use(express.json());
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
+app.use(fileUpload({
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
+  abortOnLimit: true,
+  responseOnLimit: 'File size exceeds the maximum limit of 10MB',
+}));
 
 // Rate limiting
 const limiter = rateLimit({
@@ -69,6 +76,7 @@ app.use('/api/payments', paymentRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/user', userRoutes);
+app.use('/api/documents', documentRoutes);
 
 // 404 handler
 app.use((req, res) => {
