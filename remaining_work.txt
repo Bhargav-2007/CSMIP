@@ -1,0 +1,203 @@
+CSMIP - Remaining Work
+======================
+Generated: 2026-07-03
+Project: Citizen Services & Municipal Intelligence Platform
+
+Legend:  [CRITICAL]  Must-fix before any demo
+         [HIGH]      Needed for full feature functionality  
+         [MEDIUM]    Polish / UX improvements
+         [LOW]       Nice-to-have / future scope
+         [DEVOPS]    Infrastructure / deployment task
+
+═══════════════════════════════════════════════════════════
+SECTION 1 — DATABASE & BACKEND  (Blocks most features)
+═══════════════════════════════════════════════════════════
+
+[CRITICAL] Set up PostgreSQL database
+  - Install PostgreSQL on the machine running the backend
+  - Create DB:   psql -U postgres -c "CREATE DATABASE csmip_db;"
+  - Create user: psql -U postgres -c "CREATE USER csmip_user WITH PASSWORD 'csmip_password';"
+  - Grant perms: psql -U postgres -c "GRANT ALL PRIVILEGES ON DATABASE csmip_db TO csmip_user;"
+  - Push schema: cd backend && npx prisma db push
+  - Seed data:   cd backend && node prisma/seed.js
+  Files affected: backend/.env (DATABASE_URL already set correctly)
+
+[CRITICAL] Seed more service data
+  - seed.js only creates 3 services (Birth Cert, Death Cert, Property Tax)
+  - Add remaining 6 services from mockData.js into seed.js so they persist in DB:
+    Water Bill, Trade License, Building Plan, Marriage Certificate,
+    Domicile Certificate, Income Certificate
+  File: backend/prisma/seed.js
+
+[HIGH] AI/LLM Integration — Gemini API Key
+  - Assistant.jsx calls /api/chat/discovery and /api/chat/form-fill
+  - These backend endpoints need a Gemini (or OpenAI) API key to work
+  - Currently will 500 without a valid key
+  - Add to backend/.env:  GEMINI_API_KEY=your_key_here
+  - Check backend/src/routes/ for chat route implementation
+
+[HIGH] OTP / SMS Integration
+  - Login requires OTP sent to phone
+  - backend/.env has OTP_SERVICE_PROVIDER=mock (returns dev_otp in response)
+  - For production: integrate real SMS provider (Twilio, MSG91, Kaleyra)
+  - Config keys needed: OTP_API_KEY, OTP_API_URL in .env
+
+[HIGH] Document Upload Backend
+  - Assistant.jsx uploads files to /api/documents/upload
+  - Check if backend/src/routes/documents.js handles file storage correctly
+  - Needs: multer or similar middleware, storage destination configured
+  - Currently unclear if files are saved to disk or cloud
+
+[MEDIUM] Payment Gateway
+  - Payments.jsx and backend/src/routes/payments.js exist
+  - backend/.env has PAYMENT_GATEWAY=mock
+  - For real payments: integrate Razorpay or PayU
+  - Config needed: PAYMENT_GATEWAY_KEY, PAYMENT_GATEWAY_SECRET in .env
+
+[MEDIUM] Admin Authorization
+  - Dashboard.jsx has a "become-admin" button intentionally disabled
+  - Admin role must be set server-side only (direct DB update or backend CLI)
+  - To make someone admin: UPDATE "User" SET role='admin' WHERE phone='...'
+  - No frontend self-promotion should ever be re-enabled (security risk)
+
+═══════════════════════════════════════════════════════════
+SECTION 2 — FRONTEND PAGES  (UI incomplete or untested)
+═══════════════════════════════════════════════════════════
+
+[HIGH] Dashboard.jsx — All tabs empty without DB
+  - Applications, Complaints, RTI, Payments tabs all show "Nothing here yet"
+  - This is expected until DB is live
+  - No UI changes needed — will auto-populate once DB is connected
+  - However: API response key mismatch likely (check: r.data.applications vs r.data)
+    Recommend: Add .catch(() => []) fallbacks on all 4 axios calls
+
+[HIGH] ServiceDetail.jsx — Service detail page untested
+  - Fetches /api/services/:slug from backend
+  - Will 500 without DB
+  - No mock fallback added yet — add MOCK_SERVICES.find(s => s.slug === slug) fallback
+  File: src/pages/ServiceDetail.jsx
+
+[HIGH] ApplyService.jsx — Application form untested  
+  - POSTs to /api/applications with auth token
+  - Will 500 without DB
+  - Should show success screen after mock submission too
+  File: src/pages/ApplyService.jsx
+
+[HIGH] Track.jsx — Application tracking untested
+  - GETs /api/applications?ref=... from backend
+  - Will 500 without DB
+  - Add mock tracking response when offline
+  File: src/pages/Track.jsx
+
+[HIGH] Schemes.jsx — Currently uses API only, no mock fallback
+  - Fetches /api/services/schemes (backend route exists)
+  - Add MOCK_SCHEMES data in mockData.js and fallback
+  File: src/pages/Schemes.jsx, src/lib/mockData.js
+
+[MEDIUM] Complaint.jsx — Form works but list empty without DB
+  - Complaint submission will 500 without DB
+  - Consider adding a "demo mode" toast when offline
+  File: src/pages/Complaint.jsx
+
+[MEDIUM] RTI.jsx — Same as Complaint
+  - RTI filing will 500 without DB
+  File: src/pages/RTI.jsx
+
+[MEDIUM] Payments.jsx — Untested end-to-end
+  - Displays payment history and payment initiation
+  - Will be empty without DB
+  File: src/pages/Payments.jsx
+
+[MEDIUM] Admin.jsx — Admin panel completely untested
+  - Only accessible to role=admin users
+  - Needs DB to be live to show any data
+  File: src/pages/Admin.jsx
+
+[LOW] Assistant.jsx — Streaming chat UX
+  - Chat works when Gemini API key is configured
+  - Consider adding typing indicator animation
+  - File upload preview could show image thumbnails
+  File: src/pages/Assistant.jsx
+
+═══════════════════════════════════════════════════════════
+SECTION 3 — UI / STYLING POLISH
+═══════════════════════════════════════════════════════════
+
+[MEDIUM] Pages not yet redesigned (still plain/minimal)
+  - Dashboard.jsx     → Add profile banner, better stat cards, empty states
+  - Complaint.jsx     → Add category icons, map picker for location
+  - RTI.jsx           → Add department autocomplete, fee indicator
+  - Track.jsx         → Add timeline/stepper UI for application status
+  - Schemes.jsx       → Add eligibility filter, card grid layout
+  - ServiceDetail.jsx → Add requirements checklist, fee breakdown, apply CTA
+  - ApplyService.jsx  → Multi-step form wizard with progress bar
+  - Admin.jsx         → Data tables, charts, export functionality
+
+[MEDIUM] React Router Future Flag Warnings (harmless but noisy)
+  - Add future flags to BrowserRouter in App.jsx to silence them:
+    <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+
+[LOW] Vite CJS deprecation warning
+  - "The CJS build of Vite's Node API is deprecated"
+  - Fix: Add "type": "module" to frontend/package.json or update vite.config.js to .mjs
+
+[LOW] Tailwind custom CSS classes reliability
+  - gradient-hero and glass classes were replaced with inline styles as workaround
+  - Proper fix: add these to tailwind.config.js safelist so JIT always includes them:
+    safelist: ['gradient-hero', 'glass', 'animate-fade-in-up', 'marquee-track']
+
+═══════════════════════════════════════════════════════════
+SECTION 4 — DEVOPS / DEPLOYMENT
+═══════════════════════════════════════════════════════════
+
+[DEVOPS] Environment Variables
+  - backend/.env has placeholder values for JWT_SECRET, API keys
+  - Must change JWT_SECRET to a secure random string before any demo
+  - Never commit .env to git — confirm .gitignore covers it ✅
+
+[DEVOPS] CORS
+  - backend/.env: CORS_ORIGIN=http://localhost:3000,http://localhost:5173
+  - Add production URL here when deploying
+
+[DEVOPS] Build for production
+  - Frontend: cd app/frontend && npm run build  (outputs to dist/)
+  - Backend: Needs PM2 or similar process manager for persistent running
+  - Not needed for hackathon demo — dev servers are fine
+
+[DEVOPS] Prisma Migrations
+  - Currently using npx prisma db push (dev mode, no migration history)
+  - For production: switch to npx prisma migrate deploy
+
+═══════════════════════════════════════════════════════════
+SECTION 5 — KNOWN BUGS (Not yet fixed)
+═══════════════════════════════════════════════════════════
+
+  BUG-1: Dashboard axios calls have no .catch() fallbacks
+    → If any one of the 4 API calls fails, the component silently breaks
+    → Fix: Add .catch(() => []) to each axios call in Dashboard.jsx
+
+  BUG-2: Schemes API endpoint is /api/services/schemes (note: under /services/)
+    → This conflicts with the /:slug dynamic route in services.js
+    → /services/schemes will try to find a service with slug="schemes" first
+    → Fix: Move schemes to its own route file or rename path to /api/schemes
+
+  BUG-3: Assistant file upload calls /api/api/documents/upload (double /api/)
+    → Line 77 in Assistant.jsx: `${API_URL}/api/documents/upload`
+    → API_URL already includes /api — remove the extra /api from this path
+
+  BUG-4: Complaint and RTI load() called with empty token on mount
+    → useEffect runs before auth token is restored from localStorage
+    → Add token as dependency: useEffect(() => { if(token) load(); }, [token])
+
+═══════════════════════════════════════════════════════════
+QUICK PRIORITY ORDER FOR NEXT SESSION
+═══════════════════════════════════════════════════════════
+
+  1. Set up PostgreSQL + prisma db push + seed.js   [CRITICAL]
+  2. Fix BUG-2 (schemes route conflict)             [CRITICAL]
+  3. Fix BUG-3 (double /api in assistant upload)    [HIGH]
+  4. Fix BUG-4 (token dependency in Complaint/RTI)  [HIGH]
+  5. Add mock fallbacks to ServiceDetail, Track     [HIGH]
+  6. Configure Gemini API key for AI assistant      [HIGH]
+  7. Fix React Router future flag warnings          [MEDIUM]
+  8. UI polish on Dashboard, Complaint, RTI pages   [MEDIUM]

@@ -1,0 +1,56 @@
+Changes made to fix project configuration issues:
+
+1. **Frontend (app/frontend/package.json)**
+   - Replaced invalid `@radix-ui/react-sheet` dependency with the correct `@radix-ui/react-dialog` package required by shadcn/ui components.
+   - Updated other invalid Radix UI component versions (like `^2.0.2`) to `latest` to resolve npm installation `notarget` errors.
+
+2. **Backend (backend/package.json)**
+   - Downgraded `prisma` and `@prisma/client` from the invalid/future version `^7.8.0` to a stable version `^5.21.1` to fix the API breaking changes. 
+
+3. **Backend (backend/prisma/schema.prisma)**
+   - Reverted the removal of the `url` property since we downgraded to a stable Prisma version.
+
+4. **Backend (backend/index.js)**
+   - Fixed the module imports for API routes. The routes were being imported from `./routes/...` but they are actually located in `./src/routes/...`.
+
+5. Frontend JSX Parsing Fixes
+   - Configured Vite to resolve path aliases (@/).
+   - Renamed all .js components to .jsx to comply with Vite's strict JSX parsing.
+   - Fixed a typo in lable.jsx -> label.jsx.
+   - Created the missing index.css for Tailwind CSS styles.
+
+6. Lucide Icon Fixes
+   - Replaced hallucinated `ShieldUser` icon with valid `ShieldAlert` in Dashboard.jsx.
+   - Upgraded `lucide-react` to latest version.
+
+7. Environment Variables Fix (Vite)
+   - Replaced process.env references with import.meta.env in uth.jsx, pi.jsx, and Login.jsx to be compatible with Vite's environment variable injection.
+
+8. UI Styling Fixes (Tailwind)
+   - Created missing `tailwind.config.js` and `postcss.config.js` to ensure Tailwind CSS classes are processed correctly by Vite.
+
+9. Comprehensive UI Redesign
+   - Rebuilt index.css with civic brand tokens, tricolour stripe, glassmorphism, marquee animation, and micro-animations.
+   - Redesigned Layout with premium dark footer, glassmorphism header, user avatar initials, and polished nav states.
+   - Redesigned Home page with hero stats strip, dark gradient schemes section, improved card hover effects.
+   - Redesigned Login page as split-screen with decorative left panel and animated OTP input.
+
+10. i18n Fix
+    - The I18nProvider was never mounted in the component tree, so all t() calls returned raw keys like 'nav_home'.
+    - Added I18nProvider wrapping the Router in App.jsx.
+    - Fixed the default i18n context to resolve from English strings instead of returning the raw key.
+
+11. Services API Fix and Mock Data Fallback
+    - Root cause: PostgreSQL DB not running at localhost:5432 so backend returns 500 for all DB calls.
+    - Created src/lib/mockData.js with 9 realistic services and 3 alerts used as fallback.
+    - Fixed response key mismatch (API returns .data not .services).
+    - Home.jsx and Services.jsx now fall back to mock data when DB is offline.
+    - Fully redesigned Services page with hero header, category filter pills, loading skeleton, rich cards.
+
+    TO FIX THE DATABASE (required for full functionality):
+    1. Install PostgreSQL from https://www.postgresql.org/download/windows/
+    2. Run: psql -U postgres -c "CREATE DATABASE csmip_db;"
+    3. Run: psql -U postgres -c "CREATE USER csmip_user WITH PASSWORD 'csmip_password';"
+    4. Run: psql -U postgres -c "GRANT ALL PRIVILEGES ON DATABASE csmip_db TO csmip_user;"
+    5. In /backend run: npx prisma db push
+    6. In /backend run: node prisma/seed.js
