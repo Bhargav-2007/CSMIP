@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { API_URL, useAuth, authHeaders } from "@/auth";
-import { FileText, AlertTriangle, Scroll, CreditCard, ShieldUser } from "lucide-react";
+import { FileText, AlertTriangle, Scroll, CreditCard, ShieldAlert } from "lucide-react";
 import { toast } from "sonner";
 
 export default function Dashboard() {
@@ -49,7 +49,7 @@ export default function Dashboard() {
         </div>
         {user?.role !== "admin" && (
           <Button variant="outline" disabled title="Admin access requires server-side authorization" data-testid="become-admin-btn">
-            <ShieldUser className="w-4 h-4 mr-1" /> Admin Access (Requires Authorization)
+            <ShieldAlert className="w-4 h-4 mr-1" /> Admin Access (Requires Authorization)
           </Button>
         )}
       </div>

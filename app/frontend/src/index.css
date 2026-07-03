@@ -1,0 +1,209 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Shadcn UI tokens */
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+    --primary: 221 83% 35%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 221 83% 35%;
+    --radius: 0.625rem;
+
+    /* CSMIP Civic Brand Colors */
+    --civic-primary: #1E3A8A;       /* Deep India Blue */
+    --civic-primary-light: #2563EB; /* Brighter Blue */
+    --civic-saffron: #C2410C;       /* Indian Saffron */
+    --civic-saffron-light: #F97316; /* Lighter Saffron */
+    --civic-green: #15803D;         /* Ashoka Chakra Green */
+    --civic-green-light: #22C55E;
+    --civic-white: #F8FAFF;
+  }
+
+  * {
+    @apply border-border;
+    box-sizing: border-box;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-size: 15px;
+    line-height: 1.6;
+  }
+}
+
+@layer components {
+
+  /* ═══════════════════════════════════════
+     TYPOGRAPHY
+  ═══════════════════════════════════════ */
+  .heading-font {
+    font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+    letter-spacing: -0.01em;
+  }
+
+  /* ═══════════════════════════════════════
+     INDIAN TRICOLOUR STRIPE  
+  ═══════════════════════════════════════ */
+  .tricolour-stripe {
+    height: 4px;
+    background: linear-gradient(
+      to right,
+      #FF9933 33.33%,
+      #FFFFFF 33.33% 66.66%,
+      #138808 66.66%
+    );
+  }
+
+  /* ═══════════════════════════════════════
+     CARD HOVER EFFECT
+  ═══════════════════════════════════════ */
+  .civic-card {
+    @apply transition-all duration-200 ease-out;
+  }
+  .civic-card:hover {
+    @apply shadow-md -translate-y-0.5;
+  }
+
+  /* ═══════════════════════════════════════
+     MARQUEE ANIMATION (Alerts Ticker)
+  ═══════════════════════════════════════ */
+  .marquee-track {
+    animation: marquee 30s linear infinite;
+  }
+  @keyframes marquee {
+    0%   { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+  }
+
+  /* ═══════════════════════════════════════
+     GLASS MORPHISM
+  ═══════════════════════════════════════ */
+  .glass {
+    background: rgba(255, 255, 255, 0.12);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+  }
+
+  /* ═══════════════════════════════════════
+     GRADIENT UTILITIES
+  ═══════════════════════════════════════ */
+  .gradient-hero {
+    background: linear-gradient(135deg, #0F2167 0%, #1E3A8A 40%, #1d4ed8 100%);
+  }
+
+  .gradient-saffron {
+    background: linear-gradient(135deg, #7c2d12, #C2410C);
+  }
+
+  /* ═══════════════════════════════════════
+     SPINNER / LOADING
+  ═══════════════════════════════════════ */
+  .spinner {
+    @apply animate-spin rounded-full border-2 border-current border-t-transparent;
+  }
+
+  /* ═══════════════════════════════════════
+     STATUS BADGES  
+  ═══════════════════════════════════════ */
+  .status-pill {
+    @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold tracking-wide;
+  }
+  .status-pending   { @apply status-pill bg-amber-100 text-amber-800; }
+  .status-approved  { @apply status-pill bg-green-100 text-green-800; }
+  .status-rejected  { @apply status-pill bg-red-100 text-red-800; }
+  .status-completed { @apply status-pill bg-blue-100 text-blue-800; }
+
+  /* ═══════════════════════════════════════
+     FOCUS / ACCESSIBILITY
+  ═══════════════════════════════════════ */
+  :focus-visible {
+    outline: 2px solid var(--civic-primary);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  /* ═══════════════════════════════════════
+     SCROLLBAR STYLING
+  ═══════════════════════════════════════ */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track { background: #f1f5f9; }
+  ::-webkit-scrollbar-thumb {
+    background: #94a3b8;
+    border-radius: 99px;
+  }
+  ::-webkit-scrollbar-thumb:hover { background: #64748b; }
+
+  /* ═══════════════════════════════════════
+     LINE CLAMP UTILITY
+  ═══════════════════════════════════════ */
+  .line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .line-clamp-3 {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  /* ═══════════════════════════════════════
+     FADE-IN ANIMATION
+  ═══════════════════════════════════════ */
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(16px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  .animate-fade-in-up {
+    animation: fadeInUp 0.45s ease-out both;
+  }
+
+  /* ═══════════════════════════════════════
+     PULSE GLOW (for hero badge, CTA, etc.)
+  ═══════════════════════════════════════ */
+  @keyframes pulse-glow {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(30, 58, 138, 0.3); }
+    50%       { box-shadow: 0 0 0 8px rgba(30, 58, 138, 0); }
+  }
+  .pulse-glow {
+    animation: pulse-glow 2s ease-in-out infinite;
+  }
+}

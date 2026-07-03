@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-d
 import { QueryClientProvider, QueryClient } from "@tanstack/react-query";
 import { Toaster } from "sonner";
 import { AuthProvider, useAuth } from "@/auth";
+import { I18nProvider } from "@/i18n";
 
 // Layout
 import Layout from "@/components/Layout";
@@ -136,15 +137,17 @@ function AppContent() {
 
 export default function App() {
   return (
-    <Router>
-      <AuthProvider>
-        <QueryClientProvider client={queryClient}>
-          <Suspense fallback={<LoadingPage />}>
-            <AppContent />
-            <Toaster position="top-center" richColors />
-          </Suspense>
-        </QueryClientProvider>
-      </AuthProvider>
-    </Router>
+    <I18nProvider>
+      <Router>
+        <AuthProvider>
+          <QueryClientProvider client={queryClient}>
+            <Suspense fallback={<LoadingPage />}>
+              <AppContent />
+              <Toaster position="top-center" richColors />
+            </Suspense>
+          </QueryClientProvider>
+        </AuthProvider>
+      </Router>
+    </I18nProvider>
   );
 }

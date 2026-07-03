@@ -7,16 +7,16 @@ const fileUpload = require('express-fileupload');
 const { PrismaClient } = require('@prisma/client');
 
 // Import routes
-const authRoutes = require('./routes/auth');
-const serviceRoutes = require('./routes/services');
-const applicationRoutes = require('./routes/applications');
-const complaintRoutes = require('./routes/complaints');
-const rtiRoutes = require('./routes/rti');
-const paymentRoutes = require('./routes/payments');
-const dashboardRoutes = require('./routes/dashboard');
-const adminRoutes = require('./routes/admin');
-const userRoutes = require('./routes/user');
-const documentRoutes = require('./routes/documents');
+const authRoutes = require('./src/routes/auth');
+const serviceRoutes = require('./src/routes/services');
+const applicationRoutes = require('./src/routes/applications');
+const complaintRoutes = require('./src/routes/complaints');
+const rtiRoutes = require('./src/routes/rti');
+const paymentRoutes = require('./src/routes/payments');
+const dashboardRoutes = require('./src/routes/dashboard');
+const adminRoutes = require('./src/routes/admin');
+const userRoutes = require('./src/routes/user');
+const documentRoutes = require('./src/routes/documents');
 
 // Initialize app and Prisma
 const app = express();

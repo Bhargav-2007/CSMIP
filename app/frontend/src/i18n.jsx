@@ -118,7 +118,11 @@ const STRINGS = {
   },
 };
 
-const I18nContext = createContext({ lang: "en", t: (k) => k, setLang: () => {} });
+const I18nContext = createContext({
+  lang: "en",
+  t: (k) => STRINGS.en[k] || k,
+  setLang: () => {},
+});
 
 export const I18nProvider = ({ children }) => {
   const [lang, setLangState] = useState(() => localStorage.getItem("csmip_lang") || "en");
