@@ -4,7 +4,7 @@ import svgr from 'vite-plugin-svgr';
 import path from 'path';
 
 export default defineConfig({
-  base: '/CSMIP/',
+  base: process.env.VITE_BASE_PATH || '/',
   plugins: [react(), svgr()],
   resolve: {
     alias: {

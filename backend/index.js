@@ -29,9 +29,18 @@ const allowedOrigins = (process.env.CORS_ORIGIN || 'http://localhost:3000')
   .map((origin) => origin.trim())
   .filter(Boolean);
 
+const allowedOriginPatterns = allowedOrigins.map((origin) => {
+  if (!origin.includes('*')) {
+    return new RegExp(`^${origin.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`);
+  }
+
+  const escaped = origin.replace(/[.+?^${}()|[\]\\]/g, '\\$&').replace(/\\\*/g, '.*');
+  return new RegExp(`^${escaped}$`);
+});
+
 app.use(cors({
   origin: (origin, callback) => {
-    if (!origin || allowedOrigins.includes(origin)) {
+    if (!origin || allowedOriginPatterns.some((pattern) => pattern.test(origin))) {
       return callback(null, true);
     }
 
