@@ -24,8 +24,19 @@ const prisma = new PrismaClient();
 
 // Middleware
 app.use(helmet());
+const allowedOrigins = (process.env.CORS_ORIGIN || 'http://localhost:3000')
+  .split(',')
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
 app.use(cors({
-  origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+
+    return callback(new Error(`CORS blocked for origin: ${origin}`));
+  },
   credentials: true
 }));
 
@@ -132,12 +143,10 @@ app.use((err, req, res, next) => {
 const PORT = process.env.PORT || 5000;
 if (require.main === module) {
   app.listen(PORT, () => {
-  console.log(`\n✓ CSMIP Backend Server started on port ${PORT}`);
-  console.log(`✓ Environment: ${process.env.NODE_ENV}`);
-  console.log(`✓ Database: PostgreSQL`);
-  console.log(`✓ API Documentation: http://localhost:${PORT}/api-docs\n`);
-});
-
+    console.log(`\n✓ CSMIP Backend Server started on port ${PORT}`);
+    console.log(`✓ Environment: ${process.env.NODE_ENV}`);
+    console.log(`✓ Database: PostgreSQL`);
+    console.log(`✓ API Documentation: http://localhost:${PORT}/api-docs\n`);
   });
 }
 
