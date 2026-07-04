@@ -19,8 +19,8 @@ export default function Complaints() {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  const load = () => axios.get(`${API_URL}/complaints`, { headers: authHeaders(token) }).then(r => setItems(r.data.data || [])).catch(() => setItems([]));
-  useEffect(() => { load(); }, [token]);
+  const load = () => axios.get(`${API_URL}/complaints`, { headers: authHeaders(token) }).then(r => setItems(r.data.complaints));
+  useEffect(() => { load(); }, []);
 
   const submit = async (e) => {
     e.preventDefault();

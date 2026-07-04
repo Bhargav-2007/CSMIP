@@ -1,6 +1,6 @@
 const express = require('express');
 const { authenticate, authorize } = require('../middleware/auth');
-const { exportToExcel, exportToCsv, formatExportData } = require('../utils/export');
+const { exportToExcel, formatExportData } = require('../utils/export');
 const router = express.Router();
 
 // Admin dashboard stats
@@ -77,14 +77,6 @@ router.put('/applications/:refNo', authenticate, authorize(['ADMIN', 'OFFICER'])
   try {
     const { status, remarks } = req.body;
 
-    const existing = await req.prisma.application.findUnique({
-      where: { refNo: req.params.refNo }
-    });
-
-    if (!existing) {
-      return res.status(404).json({ error: { code: 'APPLICATION_NOT_FOUND', message: 'Application not found' } });
-    }
-
     const app = await req.prisma.application.update({
       where: { refNo: req.params.refNo },
       data: { status, remarks, updatedAt: new Date() }
@@ -93,7 +85,7 @@ router.put('/applications/:refNo', authenticate, authorize(['ADMIN', 'OFFICER'])
     await req.prisma.statusHistory.create({
       data: {
         applicationId: app.id,
-        previousStatus: existing.status,
+        previousStatus: app.status,
         newStatus: status,
         remarks,
         changedBy: req.user.id
@@ -146,43 +138,20 @@ router.get('/complaints', authenticate, authorize(['ADMIN', 'OFFICER']), async (
   }
 });
 
-// Update complaint status or assignment
-router.put('/complaints/:refNo', authenticate, authorize(['ADMIN', 'OFFICER']), async (req, res) => {
+// Assign complaint to officer
+router.put('/complaints/:refNo/assign', authenticate, authorize(['ADMIN']), async (req, res) => {
   try {
-    const { status, remarks, assignedTo } = req.body;
-
-    const existing = await req.prisma.complaint.findUnique({
-      where: { refNo: req.params.refNo }
-    });
-
-    if (!existing) {
-      return res.status(404).json({ error: { code: 'COMPLAINT_NOT_FOUND', message: 'Complaint not found' } });
-    }
+    const { assignedTo } = req.body;
 
     const complaint = await req.prisma.complaint.update({
       where: { refNo: req.params.refNo },
-      data: {
-        ...(status && { status }),
-        ...(remarks && { remarks }),
-        ...(assignedTo !== undefined && { assignedTo }),
-        updatedAt: new Date()
-      }
-    });
-
-    await req.prisma.statusHistory.create({
-      data: {
-        complaintId: complaint.id,
-        previousStatus: existing.status,
-        newStatus: complaint.status,
-        remarks,
-        changedBy: req.user.id
-      }
+      data: { assignedTo, status: 'ASSIGNED', updatedAt: new Date() }
     });
 
     res.json({ ref_no: complaint.refNo, status: complaint.status });
   } catch (error) {
     res.status(500).json({
-      error: { code: 'UPDATE_ERROR', message: 'Failed to update complaint' }
+      error: { code: 'ASSIGN_ERROR', message: 'Failed to assign complaint' }
     });
   }
 });
@@ -252,7 +221,7 @@ router.put('/rti/:refNo/respond', authenticate, authorize(['ADMIN', 'OFFICER']),
 router.get('/export/:kind', authenticate, authorize(['ADMIN']), async (req, res) => {
   try {
     const { kind } = req.params;
-    const { format = 'json' } = req.query;
+    const { format = 'json' } = req.query; // default: json, or: xlsx
 
     let data = [];
     let sheetName = 'Data';
@@ -347,11 +316,6 @@ router.get('/export/:kind', authenticate, authorize(['ADMIN']), async (req, res)
       res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
       res.setHeader('Content-Disposition', `attachment; filename="csmip-${kind}-${Date.now()}.xlsx"`);
       res.send(buffer);
-    } else if (format === 'csv') {
-      const csv = exportToCsv(formattedData);
-      res.setHeader('Content-Type', 'text/csv');
-      res.setHeader('Content-Disposition', `attachment; filename="csmip-${kind}-${Date.now()}.csv"`);
-      res.send(csv);
     } else {
       res.json({
         data: formattedData,

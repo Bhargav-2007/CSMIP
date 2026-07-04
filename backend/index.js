@@ -17,7 +17,6 @@ const dashboardRoutes = require('./src/routes/dashboard');
 const adminRoutes = require('./src/routes/admin');
 const userRoutes = require('./src/routes/user');
 const documentRoutes = require('./src/routes/documents');
-const trackRoutes = require('./src/routes/track');
 
 // Initialize app and Prisma
 const app = express();
@@ -78,7 +77,6 @@ app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api/documents', documentRoutes);
-app.use('/api/track', trackRoutes);
 
 // 404 handler
 app.use((req, res) => {

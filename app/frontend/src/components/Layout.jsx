@@ -92,7 +92,7 @@ const Header = () => {
                 <DropdownMenuItem onClick={() => nav("/dashboard")} data-testid="menu-dashboard" className="gap-2 cursor-pointer">
                   <LayoutDashboard className="w-4 h-4 text-slate-500" /> {t("nav_dashboard")}
                 </DropdownMenuItem>
-                {['admin', 'officer'].includes(String(user.role || '').toLowerCase()) && (
+                {user.role === "admin" && (
                   <DropdownMenuItem onClick={() => nav("/admin")} data-testid="menu-admin" className="gap-2 cursor-pointer">
                     <Settings className="w-4 h-4 text-slate-500" /> {t("nav_admin")}
                   </DropdownMenuItem>

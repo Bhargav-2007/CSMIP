@@ -1,5 +1,5 @@
 import React, { Suspense } from "react";
-import { HashRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { QueryClientProvider, QueryClient } from "@tanstack/react-query";
 import { Toaster } from "sonner";
 import { AuthProvider, useAuth } from "@/auth";
@@ -39,13 +39,11 @@ const ProtectedRoute = ({ children }) => {
   return token ? children : <Navigate to="/login" replace />;
 };
 
-const isAdminUser = (user) => ['admin', 'officer'].includes(String(user?.role || '').toLowerCase());
-
 // Admin-only route
 const AdminRoute = ({ children }) => {
   const { token, user } = useAuth();
   if (!token) return <Navigate to="/login" replace />;
-  if (!isAdminUser(user)) return <Navigate to="/dashboard" replace />;
+  if (user?.role !== "admin") return <Navigate to="/dashboard" replace />;
   return children;
 };
 
