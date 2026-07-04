@@ -13,15 +13,15 @@ router.post('/', authenticate, async (req, res) => {
   try {
     const { title, description, category, attachments } = req.body;
 
-    if (!title || title.length < 10) {
+    if (!title || title.length < 3) {
       return res.status(400).json({
-        error: { code: 'INVALID_TITLE', message: 'Title must be at least 10 characters' }
+        error: { code: 'INVALID_TITLE', message: 'Title must be at least 3 characters' }
       });
     }
 
-    if (!description || description.length < 20) {
+    if (!description || description.length < 5) {
       return res.status(400).json({
-        error: { code: 'INVALID_DESCRIPTION', message: 'Description must be at least 20 characters' }
+        error: { code: 'INVALID_DESCRIPTION', message: 'Description must be at least 5 characters' }
       });
     }
 

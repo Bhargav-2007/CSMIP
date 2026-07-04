@@ -43,9 +43,9 @@ export default function Login() {
     try {
       const response = await authAPI.verifyOTP(phone, otp);
       const { token, refresh_token, user } = response.data;
-      localStorage.setItem('token', token);
-      localStorage.setItem('refresh_token', refresh_token);
-      localStorage.setItem('user', JSON.stringify(user));
+      localStorage.setItem('csmip_token', token);
+      localStorage.setItem('csmip_refresh_token', refresh_token);
+      localStorage.setItem('csmip_user', JSON.stringify(user));
       login(token, user);
       toast.success(`Welcome, ${user.name || 'Citizen'}! 🙏`);
       nav("/dashboard");

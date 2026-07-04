@@ -41,6 +41,9 @@ router.get('/', async (req, res) => {
         fee: parseFloat(s.fee),
         sla_days: s.slaDay,
         requirements: s.requirements,
+        department: s.category?.replace(/_/g, ' ') || 'Municipal Services',
+        documents: s.requirements || [],
+        eligibility: s.requirements?.join(', ') || 'Available to residents with valid identity proof.',
         fields: s.formFields.map(f => ({
           name: f.name,
           label: f.label,
@@ -97,6 +100,9 @@ router.get('/:slug', async (req, res) => {
       fee: parseFloat(service.fee),
       sla_days: service.slaDay,
       requirements: service.requirements,
+      department: service.category?.replace(/_/g, ' ') || 'Municipal Services',
+      documents: service.requirements || [],
+      eligibility: service.requirements?.join(', ') || 'Available to residents with valid identity proof.',
       fields: service.formFields.map(f => ({
         name: f.name,
         label: f.label,

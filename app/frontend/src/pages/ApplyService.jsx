@@ -50,7 +50,7 @@ export default function ApplyService() {
     try {
       const r = await axios.post(
         `${API_URL}/applications`,
-        { service_slug: slug, form_data: data },
+        { serviceId: svc.id, formData: data },
         { headers: authHeaders(token) }
       );
       setResult(r.data);

@@ -39,11 +39,13 @@ const ProtectedRoute = ({ children }) => {
   return token ? children : <Navigate to="/login" replace />;
 };
 
+const isAdminUser = (user) => ['admin', 'officer'].includes(String(user?.role || '').toLowerCase());
+
 // Admin-only route
 const AdminRoute = ({ children }) => {
   const { token, user } = useAuth();
   if (!token) return <Navigate to="/login" replace />;
-  if (user?.role !== "admin") return <Navigate to="/dashboard" replace />;
+  if (!isAdminUser(user)) return <Navigate to="/dashboard" replace />;
   return children;
 };
 

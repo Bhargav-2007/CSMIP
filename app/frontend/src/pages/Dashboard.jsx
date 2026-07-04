@@ -19,11 +19,11 @@ export default function Dashboard() {
 
   useEffect(() => {
     const h = { headers: authHeaders(token) };
-    axios.get(`${API_URL}/dashboard/stats`, h).then(r => setStats(r.data));
-    axios.get(`${API_URL}/applications`, h).then(r => setApps(r.data.applications));
-    axios.get(`${API_URL}/complaints`, h).then(r => setCmps(r.data.complaints));
-    axios.get(`${API_URL}/rti`, h).then(r => setRtis(r.data.rti));
-    axios.get(`${API_URL}/payments`, h).then(r => setPays(r.data.payments));
+    axios.get(`${API_URL}/dashboard/stats`, h).then(r => setStats(r.data.stats || r.data)).catch(() => {});
+    axios.get(`${API_URL}/applications`, h).then(r => setApps(r.data.data || [])).catch(() => {});
+    axios.get(`${API_URL}/complaints`, h).then(r => setCmps(r.data.data || [])).catch(() => {});
+    axios.get(`${API_URL}/rti`, h).then(r => setRtis(r.data.data || [])).catch(() => {});
+    axios.get(`${API_URL}/payments`, h).then(r => setPays(r.data.data || [])).catch(() => {});
   }, [token]);
 
   const becomeAdmin = async () => {

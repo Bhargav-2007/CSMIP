@@ -107,35 +107,55 @@ router.post('/initiate', authenticate, async (req, res) => {
 // Mock payment endpoint (for testing)
 router.post('/mock', authenticate, async (req, res) => {
   try {
-    const { paymentId, status } = req.body;
+    const { paymentId, status, serviceSlug, billNumber, amount, payerName } = req.body;
 
-    if (!paymentId) {
-      return res.status(400).json({
-        error: { code: 'MISSING_PAYMENT_ID', message: 'Payment ID is required' }
+    if (paymentId) {
+      const payment = await req.prisma.payment.update({
+        where: { id: paymentId },
+        data: {
+          status: status || 'SUCCESS',
+          transactionId: `MOCK-${Date.now()}`,
+          gatewayResponse: { mock: true }
+        }
+      });
+
+      if (payment.applicationId && payment.status === 'SUCCESS') {
+        await req.prisma.application.update({
+          where: { id: payment.applicationId },
+          data: { paymentStatus: 'SUCCESS' }
+        });
+      }
+
+      return res.json({
+        payment_id: payment.id,
+        status: payment.status,
+        transaction_id: payment.transactionId
       });
     }
 
-    const payment = await req.prisma.payment.update({
-      where: { id: paymentId },
+    let serviceId = null;
+    if (serviceSlug) {
+      const service = await req.prisma.service.findUnique({ where: { slug: serviceSlug } });
+      serviceId = service?.id || null;
+    }
+
+    const payment = await req.prisma.payment.create({
       data: {
+        userId: req.user.id,
+        serviceId,
+        amount: Number(amount || 0),
         status: status || 'SUCCESS',
+        paymentGateway: 'mock',
         transactionId: `MOCK-${Date.now()}`,
-        gatewayResponse: { mock: true }
+        gatewayResponse: { mock: true, billNumber, payerName }
       }
     });
-
-    // Update application payment status if successful
-    if (payment.applicationId && payment.status === 'SUCCESS') {
-      await req.prisma.application.update({
-        where: { id: payment.applicationId },
-        data: { paymentStatus: 'SUCCESS' }
-      });
-    }
 
     res.json({
       payment_id: payment.id,
       status: payment.status,
-      transaction_id: payment.transactionId
+      transaction_id: payment.transactionId,
+      amount: parseFloat(payment.amount)
     });
   } catch (error) {
     res.status(500).json({

@@ -18,14 +18,16 @@ export default function Admin() {
   const h = { headers: authHeaders(token) };
 
   useEffect(() => {
-    if (user?.role !== "admin") return;
-    axios.get(`${API_URL}/admin/stats`, h).then(r => setStats(r.data)).catch(() => {});
-    axios.get(`${API_URL}/admin/applications`, h).then(r => setApps(r.data.applications)).catch(() => {});
-    axios.get(`${API_URL}/admin/complaints`, h).then(r => setCmps(r.data.complaints)).catch(() => {});
+    if (!isAdminUser(user)) return;
+    axios.get(`${API_URL}/admin/stats`, h).then(r => setStats(r.data.stats || r.data)).catch(() => {});
+    axios.get(`${API_URL}/admin/applications`, h).then(r => setApps(r.data.data || [])).catch(() => {});
+    axios.get(`${API_URL}/admin/complaints`, h).then(r => setCmps(r.data.data || [])).catch(() => {});
     // eslint-disable-next-line
   }, [user, token]);
 
-  if (user?.role !== "admin") {
+  const isAdminUser = (user) => ['admin', 'officer'].includes(String(user?.role || '').toLowerCase());
+
+  if (!isAdminUser(user)) {
     return (
       <div className="max-w-3xl mx-auto p-10 text-center" data-testid="admin-denied">
         <h1 className="text-2xl font-bold heading-font text-slate-900">Admin / Officer Access Required</h1>
@@ -38,7 +40,7 @@ export default function Admin() {
     try {
       await axios.put(`${API_URL}/admin/applications/${ref_no}`, { status, remarks: `Marked ${status}` }, h);
       const r = await axios.get(`${API_URL}/admin/applications`, h);
-      setApps(r.data.applications);
+      setApps(r.data.data || []);
       toast.success(`Updated ${ref_no} → ${status}`);
     } catch { toast.error("Update failed"); }
   };
@@ -47,7 +49,7 @@ export default function Admin() {
     try {
       await axios.put(`${API_URL}/admin/complaints/${ref_no}`, { status, remarks: `Marked ${status}` }, h);
       const r = await axios.get(`${API_URL}/admin/complaints`, h);
-      setCmps(r.data.complaints);
+      setCmps(r.data.data || []);
       toast.success(`Updated ${ref_no} → ${status}`);
     } catch { toast.error("Update failed"); }
   };
@@ -111,7 +113,7 @@ export default function Admin() {
                 <CardContent className="p-4 flex flex-wrap items-center gap-3 justify-between">
                   <div>
                     <div className="text-xs font-mono text-slate-500">{a.ref_no}</div>
-                    <div className="font-medium text-slate-900">{a.service_name}</div>
+                    <div className="font-medium text-slate-900">{a.service}</div>
                     <div className="text-xs text-slate-500">{new Date(a.created_at).toLocaleString()}</div>
                   </div>
                   <Select value={a.status} onValueChange={(v) => updateApp(a.ref_no, v)}>
@@ -138,7 +140,7 @@ export default function Admin() {
                   <div>
                     <div className="text-xs font-mono text-slate-500">{c.ref_no}</div>
                     <div className="font-medium text-slate-900">{c.title}</div>
-                    <div className="text-xs text-slate-500">{c.category} · {c.location}</div>
+                    <div className="text-xs text-slate-500">{c.category || 'General'} · {c.user_phone || 'Citizen'}</div>
                   </div>
                   <Select value={c.status} onValueChange={(v) => updateCmp(c.ref_no, v)}>
                     <SelectTrigger data-testid={`adm-cmp-status-${c.ref_no}`} className="w-44">

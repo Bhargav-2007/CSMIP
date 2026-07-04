@@ -16,8 +16,8 @@ export default function RTI() {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  const load = () => axios.get(`${API_URL}/rti`, { headers: authHeaders(token) }).then(r => setItems(r.data.rti));
-  useEffect(() => { load(); }, []);
+  const load = () => axios.get(`${API_URL}/rti`, { headers: authHeaders(token) }).then(r => setItems(r.data.data || [])).catch(() => setItems([]));
+  useEffect(() => { load(); }, [token]);
 
   const submit = async (e) => {
     e.preventDefault();

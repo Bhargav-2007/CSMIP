@@ -2,6 +2,8 @@ import axios from 'axios';
 
 const API_BASE_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
 const API_TIMEOUT = parseInt(import.meta.env.VITE_API_TIMEOUT) || 30000;
+const TOKEN_KEY = 'csmip_token';
+const REFRESH_TOKEN_KEY = 'csmip_refresh_token';
 
 // Create axios instance with default config
 const apiClient = axios.create({
@@ -15,7 +17,7 @@ const apiClient = axios.create({
 // Add request interceptor for authentication
 apiClient.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem(TOKEN_KEY);
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -34,22 +36,22 @@ apiClient.interceptors.response.use(
       originalRequest._retry = true;
 
       try {
-        const refreshToken = localStorage.getItem('refresh_token');
+        const refreshToken = localStorage.getItem(REFRESH_TOKEN_KEY);
         if (refreshToken) {
           const response = await axios.post(`${API_BASE_URL}/api/auth/refresh`, {
             refresh_token: refreshToken
           });
 
           const { token, refresh_token } = response.data;
-          localStorage.setItem('token', token);
-          localStorage.setItem('refresh_token', refresh_token);
+          localStorage.setItem(TOKEN_KEY, token);
+          localStorage.setItem(REFRESH_TOKEN_KEY, refresh_token);
 
           originalRequest.headers.Authorization = `Bearer ${token}`;
           return apiClient(originalRequest);
         }
       } catch (refreshError) {
-        localStorage.removeItem('token');
-        localStorage.removeItem('refresh_token');
+        localStorage.removeItem(TOKEN_KEY);
+        localStorage.removeItem(REFRESH_TOKEN_KEY);
         window.location.href = '/login';
         return Promise.reject(refreshError);
       }
@@ -71,7 +73,7 @@ export const authAPI = {
     apiClient.get('/api/auth/me'),
 
   refreshToken: () => {
-    const refreshToken = localStorage.getItem('refresh_token');
+    const refreshToken = localStorage.getItem(REFRESH_TOKEN_KEY);
     return apiClient.post('/api/auth/refresh', { refresh_token: refreshToken });
   },
 

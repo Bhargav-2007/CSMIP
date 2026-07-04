@@ -22,7 +22,7 @@ export default function Payments() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    axios.get(`${API_URL}/services/${slug}`).then(r => setSvc(r.data));
+    axios.get(`${API_URL}/services/${slug}`).then(r => setSvc(r.data)).catch(() => setSvc(null));
   }, [slug]);
 
   if (!svc) return <div className="p-10">Loading...</div>;
@@ -32,10 +32,16 @@ export default function Payments() {
     setLoading(true);
     try {
       const r = await axios.post(`${API_URL}/payments/mock`,
-        { service_slug: slug, bill_number: bill, amount: Number(amount), payer_name: payer || "Citizen" },
+        { serviceSlug: slug, billNumber: bill, amount: Number(amount), payerName: payer || "Citizen" },
         { headers: authHeaders(token) });
-      setDone(r.data);
-      toast.success(`Payment successful · ${r.data.txn_id}`);
+      setDone({
+        ref_no: r.data.payment_id,
+        txn_id: r.data.transaction_id,
+        amount: r.data.amount,
+        method: "Mock Payment",
+        bill_number: bill
+      });
+      toast.success(`Payment successful · ${r.data.transaction_id}`);
     } catch (e) { toast.error("Payment failed"); }
     setLoading(false);
   };

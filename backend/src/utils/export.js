@@ -6,6 +6,20 @@ const XLSX = require('xlsx');
  * @param {String} sheetName - Name of the Excel sheet
  * @returns {Buffer} - Excel file buffer
  */
+const exportToCsv = (data) => {
+  if (!Array.isArray(data) || data.length === 0) {
+    return 'No data to export';
+  }
+
+  const headers = Object.keys(data[0]);
+  const rows = data.map((row) => headers.map((header) => {
+    const value = row[header] === null || row[header] === undefined ? '' : String(row[header]);
+    return `"${value.replace(/"/g, '""')}"`;
+  }).join(','));
+
+  return [headers.join(','), ...rows].join('\n');
+};
+
 const exportToExcel = (data, sheetName = 'Data') => {
   if (!data || data.length === 0) {
     data = [{ 'message': 'No data to export' }];
@@ -159,6 +173,7 @@ const formatExportData = (kind, data) => {
 };
 
 module.exports = {
+  exportToCsv,
   exportToExcel,
   exportToExcelMultiSheet,
   flattenForExcel,
