@@ -52,7 +52,7 @@ apiClient.interceptors.response.use(
       } catch (refreshError) {
         localStorage.removeItem(TOKEN_KEY);
         localStorage.removeItem(REFRESH_TOKEN_KEY);
-        window.location.href = '/login';
+        window.location.hash = '#/login';
         return Promise.reject(refreshError);
       }
     }
