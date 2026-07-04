@@ -10,7 +10,7 @@
     "migrate": "prisma migrate dev",
     "migrate:prod": "prisma migrate deploy",
     "seed": "node prisma/seed.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node --test tests/api.test.js"
   },
   "keywords": [
     "csmip",

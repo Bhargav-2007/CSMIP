@@ -1,0 +1,321 @@
+// CSMIP - Citizen Services & Municipal Intelligence Platform
+// Prisma schema for backend database
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User model - Citizens, Officers, Admins
+model User {
+  id                   String      @id @default(cuid())
+  phone                String      @unique
+  name                 String?
+  email                String?     @unique
+  role                 Role        @default(CITIZEN)
+  createdAt            DateTime    @default(now())
+  updatedAt            DateTime    @updatedAt
+  deletedAt            DateTime?   // Soft delete
+
+  // Relations
+  applications         Application[]
+  complaints           Complaint[]
+  rtiRequests          RTIRequest[]
+  payments             Payment[]
+  adminLogs            AdminLog[]   @relation("AdminLogsCreatedBy")
+  assignedComplaints   Complaint[]  @relation("AssignedOfficer")
+  assignedRTI          RTIRequest[] @relation("AssignedOfficer")
+
+  @@index([phone])
+  @@index([role])
+  @@index([deletedAt])
+}
+
+// Service model - Government services citizens can apply for
+model Service {
+  id                   String      @id @default(cuid())
+  name                 String
+  slug                 String      @unique
+  description          String      @db.Text
+  category             String      // e.g., vital_records, property, business
+  fee                  Decimal     @default(0) @db.Decimal(10, 2)
+  slaDay               Int         @default(5) // Service Level Agreement days
+  requirements         String[]    // Array of requirement strings
+  isActive             Boolean     @default(true)
+  createdAt            DateTime    @default(now())
+  updatedAt            DateTime    @updatedAt
+  deletedAt            DateTime?   // Soft delete
+
+  // Relations
+  applications         Application[]
+  formFields           FormField[]
+  payments             Payment[]
+
+  @@index([slug])
+  @@index([category])
+  @@index([isActive])
+  @@index([deletedAt])
+}
+
+// FormField model - Dynamic form fields for each service
+model FormField {
+  id                   String      @id @default(cuid())
+  serviceId            String
+  name                 String      // Field identifier
+  label                String      // Display label
+  type                 FieldType   // text, textarea, number, date, select, email, phone
+  required             Boolean     @default(false)
+  placeholder          String?
+  options              String[]    @default([]) // For select type
+  validation          String?     // Regex or validation rules
+  order                Int         @default(0)
+  createdAt            DateTime    @default(now())
+  updatedAt            DateTime    @updatedAt
+
+  // Relations
+  service              Service     @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  @@index([serviceId])
+}
+
+// Application model - Citizen applications for services
+model Application {
+  id                   String      @id @default(cuid())
+  refNo                String      @unique // Reference number like APP-2026-001234
+  userId               String
+  serviceId            String
+  status               ApplicationStatus @default(DRAFT)
+  formData             Json        // Stored form data
+  remarks              String?
+  paymentStatus        PaymentStatus @default(PENDING)
+  documents            String[]    // File URLs or paths
+  createdAt            DateTime    @default(now())
+  updatedAt            DateTime    @updatedAt
+  deletedAt            DateTime?   // Soft delete
+  submittedAt          DateTime?
+  approvedAt           DateTime?
+  rejectedAt           DateTime?
+  slaDueDate           DateTime?   // Calculated from service SLA
+
+  // Relations
+  user                 User        @relation(fields: [userId], references: [id])
+  service              Service     @relation(fields: [serviceId], references: [id])
+  payment              Payment?    @relation("ApplicationPayment")
+  statusHistory        StatusHistory[] @relation("ApplicationStatus")
+
+  @@index([refNo])
+  @@index([userId])
+  @@index([serviceId])
+  @@index([status])
+  @@index([createdAt])
+  @@index([deletedAt])
+}
+
+// Complaint model - Citizen complaints
+model Complaint {
+  id                   String      @id @default(cuid())
+  refNo                String      @unique // Reference number like CMP-2026-001234
+  userId               String
+  assignedTo           String?     // Officer/Admin ID
+  title                String
+  description          String      @db.Text
+  category             String?
+  status               ComplaintStatus @default(OPEN)
+  priority             Priority    @default(MEDIUM)
+  attachments          String[]    // File URLs
+  remarks              String?
+  createdAt            DateTime    @default(now())
+  updatedAt            DateTime    @updatedAt
+  deletedAt            DateTime?   // Soft delete
+  resolvedAt           DateTime?
+
+  // Relations
+  user                 User        @relation(fields: [userId], references: [id])
+  officer              User?       @relation("AssignedOfficer", fields: [assignedTo], references: [id])
+  statusHistory        StatusHistory[] @relation("ComplaintStatus")
+
+  @@index([refNo])
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+  @@index([deletedAt])
+}
+
+// RTIRequest model - Right to Information requests
+model RTIRequest {
+  id                   String      @id @default(cuid())
+  refNo                String      @unique // Reference number like RTI-2026-001234
+  userId               String
+  assignedTo           String?     // Officer/Admin ID
+  subject              String
+  description          String      @db.Text
+  category             String?
+  status               RTIStatus   @default(PENDING)
+  responseDocuments    String[]    // Response file URLs
+  responseText         String?     @db.Text
+  createdAt            DateTime    @default(now())
+  updatedAt            DateTime    @updatedAt
+  deletedAt            DateTime?   // Soft delete
+  respondedAt          DateTime?
+
+  // Relations
+  user                 User        @relation(fields: [userId], references: [id])
+  officer              User?       @relation("AssignedOfficer", fields: [assignedTo], references: [id])
+  statusHistory        StatusHistory[] @relation("RTIStatus")
+
+  @@index([refNo])
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+  @@index([deletedAt])
+}
+
+// Payment model - Payment records
+model Payment {
+  id                   String      @id @default(cuid())
+  userId               String
+  applicationId        String?     @unique // Linked to application if service fee
+  serviceId            String?
+  amount               Decimal     @db.Decimal(10, 2)
+  status               PaymentStatus @default(PENDING)
+  paymentGateway       String?     // e.g., "razorpay", "paytm"
+  transactionId        String?     // Gateway transaction ID
+  gatewayResponse      Json?       // Complete gateway response
+  createdAt            DateTime    @default(now())
+  updatedAt            DateTime    @updatedAt
+
+  // Relations
+  user                 User        @relation(fields: [userId], references: [id])
+  application          Application? @relation("ApplicationPayment", fields: [applicationId], references: [id])
+  service              Service?    @relation(fields: [serviceId], references: [id])
+
+  @@index([userId])
+  @@index([status])
+  @@index([transactionId])
+  @@index([createdAt])
+}
+
+// Scheme model - Government schemes
+model Scheme {
+  id                   String      @id @default(cuid())
+  name                 String
+  slug                 String      @unique
+  description          String      @db.Text
+  category             String
+  eligibility          String      @db.Text
+  benefits             String      @db.Text
+  applicationUrl       String?     // External URL if applicable
+  contactInfo          String?
+  isActive             Boolean     @default(true)
+  createdAt            DateTime    @default(now())
+  updatedAt            DateTime    @updatedAt
+  deletedAt            DateTime?   // Soft delete
+
+  @@index([slug])
+  @@index([category])
+  @@index([isActive])
+  @@index([deletedAt])
+}
+
+// AdminLog model - Audit trail for admin actions
+model AdminLog {
+  id                   String      @id @default(cuid())
+  action               String      // e.g., "application_status_updated", "complaint_assigned"
+  entityType           String      // e.g., "application", "complaint", "user"
+  entityId             String
+  changes              Json?       // What changed
+  remarks              String?
+  ipAddress            String?
+  createdBy            String
+  createdAt            DateTime    @default(now())
+
+  // Relations
+  admin                User        @relation("AdminLogsCreatedBy", fields: [createdBy], references: [id])
+
+  @@index([action])
+  @@index([entityType])
+  @@index([createdBy])
+  @@index([createdAt])
+}
+
+// StatusHistory model - Track status changes for applications, complaints, RTI
+model StatusHistory {
+  id                   String      @id @default(cuid())
+  applicationId        String?
+  complaintId          String?
+  rtiId                String?
+  previousStatus       String
+  newStatus            String
+  remarks              String?
+  changedBy            String?     // Admin ID if changed by admin
+  createdAt            DateTime    @default(now())
+
+  // Relations
+  application          Application? @relation("ApplicationStatus", fields: [applicationId], references: [id], onDelete: Cascade)
+  complaint            Complaint?  @relation("ComplaintStatus", fields: [complaintId], references: [id], onDelete: Cascade)
+  rti                  RTIRequest? @relation("RTIStatus", fields: [rtiId], references: [id], onDelete: Cascade)
+
+  @@index([applicationId])
+  @@index([complaintId])
+  @@index([rtiId])
+  @@index([createdAt])
+}
+
+// Enums
+enum Role {
+  CITIZEN
+  OFFICER
+  ADMIN
+}
+
+enum FieldType {
+  TEXT
+  TEXTAREA
+  NUMBER
+  DATE
+  SELECT
+  EMAIL
+  PHONE
+}
+
+enum ApplicationStatus {
+  DRAFT
+  SUBMITTED
+  APPROVED
+  REJECTED
+  IN_PROGRESS
+}
+
+enum ComplaintStatus {
+  OPEN
+  ASSIGNED
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+
+enum RTIStatus {
+  PENDING
+  ASSIGNED
+  IN_PROGRESS
+  RESPONDED
+  CLOSED
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCESS
+  FAILED
+  REFUNDED
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
