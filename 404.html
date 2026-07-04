@@ -1,20 +1,18 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Redirecting…</title>
-    <script>
-      (function () {
-        const path = window.location.pathname.replace(/\/+$/, '') || '/';
-        const route = path.replace(/^\/CSMIP/, '') || '/';
-        const hash = route === '/' ? '#/' : `#${route}`;
-        const target = `${window.location.origin}/CSMIP/${hash}${window.location.search}`;
-        window.location.replace(target);
-      })();
-    </script>
-  </head>
-  <body>
-    Redirecting…
-  </body>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#1e40af" />
+  <meta name="description" content="Citizen Services & Municipal Intelligence Platform - Access government services online" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <title>CSMIP - Citizen Services Portal</title>
+  <script type="module" crossorigin src="/CSMIP/assets/index-B2fJ_vwy.js"></script>
+  <link rel="stylesheet" crossorigin href="/CSMIP/assets/index-Dnp6vSQr.css">
+</head>
+<body>
+  <div id="root"></div>
+</body>
 </html>
