@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
+const API_BASE_URL = import.meta.env.VITE_BACKEND_URL || (typeof window !== 'undefined' && window.location.origin.includes('vercel.app') ? `${window.location.origin}/api` : 'http://localhost:5000');
 const API_TIMEOUT = parseInt(import.meta.env.VITE_API_TIMEOUT) || 30000;
 const TOKEN_KEY = 'csmip_token';
 const REFRESH_TOKEN_KEY = 'csmip_refresh_token';

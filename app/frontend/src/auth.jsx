@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState, useCallback } from "react";
 import axios from "axios";
 
-const API = `${import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000'}/api`;
+const API = `${import.meta.env.VITE_BACKEND_URL || (typeof window !== 'undefined' && window.location.origin.includes('vercel.app') ? `${window.location.origin}/api` : 'http://localhost:5000')}`;
 const AuthContext = createContext({ user: null, token: null, login: () => {}, logout: () => {}, refresh: () => {} });
 
 export const AuthProvider = ({ children }) => {
