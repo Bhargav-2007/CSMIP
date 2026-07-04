@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Redirecting…</title>
+    <script>
+      (function () {
+        const path = window.location.pathname.replace(/\/+$/, '') || '/';
+        const route = path.replace(/^\/CSMIP/, '') || '/';
+        const hash = route === '/' ? '#/' : `#${route}`;
+        const target = `${window.location.origin}/CSMIP/${hash}${window.location.search}`;
+        window.location.replace(target);
+      })();
+    </script>
+  </head>
+  <body>
+    Redirecting…
+  </body>
+</html>
