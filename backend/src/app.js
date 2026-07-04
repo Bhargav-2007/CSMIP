@@ -25,7 +25,8 @@ function createApp() {
   app.use(cors({
     origin: function (origin, callback) {
       const allowedOrigins = (process.env.CORS_ORIGIN || 'http://localhost:3000,http://localhost:5173').split(',').map((value) => value.trim());
-      if (!origin || allowedOrigins.includes(origin)) {
+      const isAllowed = !origin || allowedOrigins.includes(origin) || /\.vercel\.app$/i.test(origin || '') || /localhost(:\d+)?$/i.test(origin || '');
+      if (isAllowed) {
         callback(null, true);
       } else {
         callback(new Error('Not allowed by CORS'));
@@ -67,16 +68,19 @@ function createApp() {
     res.json({ status: 'OK', timestamp: new Date().toISOString() });
   });
 
-  app.use('/auth', authRoutes);
-  app.use('/services', serviceRoutes);
-  app.use('/applications', applicationRoutes);
-  app.use('/complaints', complaintRoutes);
-  app.use('/rti', rtiRoutes);
-  app.use('/payments', paymentRoutes);
-  app.use('/dashboard', dashboardRoutes);
-  app.use('/admin', adminRoutes);
-  app.use('/user', userRoutes);
-  app.use('/documents', documentRoutes);
+  app.use('/api/auth', authRoutes);
+  app.use('/api/services', serviceRoutes);
+  app.use('/api/applications', applicationRoutes);
+  app.use('/api/complaints', complaintRoutes);
+  app.use('/api/rti', rtiRoutes);
+  app.use('/api/payments', paymentRoutes);
+  app.use('/api/dashboard', dashboardRoutes);
+  app.use('/api/admin', adminRoutes);
+  app.use('/api/user', userRoutes);
+  app.use('/api/documents', documentRoutes);
+  app.get('/api/health', (req, res) => {
+    res.json({ status: 'OK', timestamp: new Date().toISOString() });
+  });
 
   app.use((req, res) => {
     res.status(404).json({

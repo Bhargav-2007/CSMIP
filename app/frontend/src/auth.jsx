@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState, useCallback } from "react";
 import axios from "axios";
 
-const API = `${import.meta.env.VITE_BACKEND_URL || (typeof window !== 'undefined' && window.location.origin.includes('vercel.app') ? `${window.location.origin}/api` : 'http://localhost:5000')}`;
+const API = import.meta.env.VITE_BACKEND_URL || (typeof window !== 'undefined' && window.location.origin.includes('vercel.app') ? window.location.origin : 'http://localhost:5000');
 const AuthContext = createContext({ user: null, token: null, login: () => {}, logout: () => {}, refresh: () => {} });
 
 export const AuthProvider = ({ children }) => {
@@ -13,7 +13,7 @@ export const AuthProvider = ({ children }) => {
   const refresh = useCallback(async () => {
     if (!token) return;
     try {
-      const res = await axios.get(`${API}/auth/me`, { headers: { Authorization: `Bearer ${token}` }});
+      const res = await axios.get(`${API}/api/auth/me`, { headers: { Authorization: `Bearer ${token}` }});
       setUser(res.data);
       localStorage.setItem("csmip_user", JSON.stringify(res.data));
     } catch (e) {
